@@ -136,6 +136,9 @@ docker compose exec app python main.py eval
 
 <p align="center">
   <img src="resources/Screenshot 2026-03-26 at 20.28.06.png" width="480" alt="PsychoAI" />
+  <img width="1109" height="889" alt="Screenshot 2026-05-05 at 19 29 41" src="https://github.com/user-attachments/assets/b546615e-f295-4988-aeb2-09ec6431ed40" />
+ <img width="1308" height="889" alt="Screenshot 2026-05-05 at 19 29 55" src="https://github.com/user-attachments/assets/865c3080-00b6-4b49-80e5-70f0a69e024b" />
+
 </p>
 
 Built as part of the PsychoAI platform — an AI assistant for gestalt therapists.  
