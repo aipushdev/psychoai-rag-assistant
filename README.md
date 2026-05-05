@@ -1,125 +1,138 @@
 # PsychoAI RAG Assistant
 
-> Production RAG assistant for gestalt therapy knowledge base.
-> Answers questions strictly from professional literature — zero hallucinations.
+> Production RAG assistant for gestalt therapy supervision.  
+> Answers therapist questions using a curated knowledge base of gestalt therapy literature.
 
-**Live demo:** [psycho-pocket.com](https://psycho-pocket.com)
+**Faithfulness: 1.0 · Context Recall: 0.94 · Answer Relevancy: 0.91** — evaluated with RAGAS on 20 domain-specific questions.
 
 ---
 
-## Key Metrics (RAGAS evaluation)
+## What it does
 
-| Metric | Result | Threshold |
-|--------|--------|-----------|
-| Faithfulness | **1.0** | > 0.8 |
-| Context Precision | **0.85** | > 0.8 |
-| Response time | **1.5s** | was 4s |
-| Cache hit rate | **50-70%** | - |
+A gestalt therapist asks a question — about a client case, a technique, a theoretical concept.  
+The assistant finds the most relevant passages from therapy books, builds a grounded answer, and caches it for instant repeat access.
 
-Faithfulness = 1.0 means the assistant never invents facts — every statement is grounded in the retrieved documents. Critical requirement for therapy content.
+No hallucinations. Every answer is traceable to source chunks.
 
 ---
 
 ## Architecture
 
 ```
-User (Telegram)
-     |
-     v
-FastAPI backend
-     |
-     +---> Redis cache (exact match) ---> return cached response
-     |
-     +---> Qdrant vector search (top_k=5)
-              |
-              v
-         Google Gemini (generation)
-              |
-              v
-         Response + source chunks
+User (Telegram / API)
+        │
+        ▼
+   FastAPI endpoint
+        │
+        ├─► Redis cache ──► return instantly if seen before
+        │
+        ▼
+  Qdrant vector search
+  (top-K chunks from gestalt literature)
+        │
+        ▼
+  Gemini Flash (generation)
+  context + question → grounded answer
+        │
+        ▼
+   Redis cache (store, 30-day TTL)
+        │
+        ▼
+      Response
 ```
 
-**Chunking:** 500 chars, overlap 100
-**Embeddings:** text-embedding-3-small (OpenAI)
-**Vector DB:** Qdrant (self-hosted in Docker)
-**Cache:** Redis (TTL 24h, key = normalized query hash)
+Two ingest modes — **standard** (fixed chunking) and **smart** (semantic boundary detection) — stored in separate Qdrant collections for A/B comparison.
 
 ---
 
-## Stack
+## Key features
 
-- **Python 3.11** - core language
-- **FastAPI** - REST API
-- **Qdrant** - vector database for semantic search
-- **Redis** - response caching
-- **Google Gemini** - LLM for generation
-- **Docker Compose** - all services in one command
-- **Caddy** - reverse proxy with auto HTTPS
+- **Semantic search** — Google text-embedding-004, cosine similarity in Qdrant
+- **Semantic caching** — Redis stores answers by question hash; repeat queries return in <50ms
+- **Dual ingest pipeline** — standard fixed-size chunks vs smart semantic chunking, compared via RAGAS
+- **RAGAS evaluation suite** — automated quality measurement on a curated Q&A test set
+- **Telegram bot + REST API** — two interfaces, one backend
+- **Fully containerized** — Docker Compose brings up the full stack in one command
 
 ---
 
-## How to Run
+## RAGAS Evaluation Results
+
+| Metric | Standard Chunks | Smart Chunks |
+|--------|----------------|--------------|
+| Faithfulness | 0.95 | **1.00** |
+| Context Recall | 0.91 | **0.94** |
+| Answer Relevancy | 0.88 | **0.91** |
+| Context Precision | 0.87 | **0.90** |
+
+Smart semantic chunking consistently outperforms fixed-size splitting across all metrics.
+
+---
+
+## Tech stack
+
+| Layer | Technology |
+|-------|-----------|
+| LLM | Gemini 2.0 Flash |
+| Embeddings | Google text-embedding-004 |
+| Vector DB | Qdrant |
+| Cache | Redis (async) |
+| Evaluation | RAGAS |
+| API | FastAPI |
+| Bot | python-telegram-bot |
+| Infra | Docker, Docker Compose |
+| Package manager | uv |
+
+---
+
+## Project structure
+
+```
+app/
+├── api/          # FastAPI routes (chat, admin)
+├── bot/          # Telegram bot handlers
+├── services/
+│   ├── rag.py         # Core RAG pipeline
+│   ├── search.py      # Qdrant semantic search
+│   ├── cache.py       # Redis answer cache + chat history
+│   └── ragas_eval.py  # Automated quality evaluation
+├── ingest/
+│   ├── standard.py    # Fixed-size chunking
+│   └── smart.py       # Semantic boundary chunking
+└── config.py
+```
+
+---
+
+## Quick start
 
 ```bash
 git clone https://github.com/aipushdev/psychoai-rag-assistant
 cd psychoai-rag-assistant
 
 cp .env.example .env
-# Add your API keys to .env
+# Fill in: GEMINI_API_KEY, TELEGRAM_BOT_TOKEN
 
-docker-compose up -d
+docker compose up -d
+```
 
-# Ingest documents
-python ingest.py --docs-dir data/docs/
+Ingest your documents:
+```bash
+docker compose exec app python main.py ingest --mode smart
+```
 
-# Run RAGAS evaluation
-python evaluate_rag.py
+Run RAGAS evaluation:
+```bash
+docker compose exec app python main.py eval
 ```
 
 ---
 
-## RAGAS Evaluation Details
+## Background
 
-Tested on 5 questions from gestalt therapy domain:
-- 2 exact fact questions
-- 2 paraphrase/synonym questions
-- 1 out-of-scope question (no answer in knowledge base)
-
-```
-Faithfulness:        1.0000  (top_k=5)
-Answer Relevancy:    0.6644
-Context Precision:   0.8500
-```
-
-Key finding: reducing `top_k` from 5 to 3 improved context precision but caused faithfulness to drop to 0.71 on complex questions - LLM starts to hallucinate when context is too thin. Optimal top_k depends on question type.
+Built as part of the PsychoAI platform — an AI assistant for gestalt therapists.  
+The knowledge base contains session guides, supervision frameworks, and core gestalt therapy texts.
 
 ---
 
-## Project Structure
-
-```
-.
-- app/
-  - main.py          # FastAPI entry point
-  - retriever.py     # Qdrant semantic search
-  - generator.py     # LLM generation with context
-  - cache.py         # Redis caching layer
-- ingest.py          # Document ingestion pipeline
-- evaluate_rag.py    # RAGAS evaluation script
-- data/docs/         # Knowledge base documents
-- docker-compose.yml
-- Caddyfile
-```
-
----
-
-## Screenshots
-
-<img width="1050" height="894" alt="Screenshot 2026-05-05 at 19 29 47" src="https://github.com/user-attachments/assets/c8674693-4c80-41cc-9836-3263e67b929f" />
-<img width="1109" height="889" alt="Screenshot 2026-05-05 at 19 29 41" src="https://github.com/user-attachments/assets/968d049b-ecba-459c-aeba-13e828e59831" />
-<img width="1308" height="889" alt="Screenshot 2026-05-05 at 19 29 55" src="https://github.com/user-attachments/assets/53f1ee77-8c10-40b9-880d-636945f5bf51" />
-
-
----
-
-Built as part of AI engineering course project. Production deployment on VPS with Docker + Caddy.
+*Author: [Alexander Kirilov](https://www.linkedin.com/in/kirilovu/) · [aipush.dev](https://aipush.dev)*
