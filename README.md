@@ -115,7 +115,10 @@ Key finding: reducing `top_k` from 5 to 3 improved context precision but caused 
 
 ## Screenshots
 
-_Screenshots of Telegram interface and RAGAS evaluation output - coming soon_
+<img width="1109" height="889" alt="Screenshot 2026-05-05 at 19 29 41" src="https://github.com/user-attachments/assets/968d049b-ecba-459c-aeba-13e828e59831" />
+<img width="1050" height="894" alt="Screenshot 2026-05-05 at 19 29 47" src="https://github.com/user-attachments/assets/c8674693-4c80-41cc-9836-3263e67b929f" />
+<img width="1308" height="889" alt="Screenshot 2026-05-05 at 19 29 55" src="https://github.com/user-attachments/assets/53f1ee77-8c10-40b9-880d-636945f5bf51" />
+
 
 ---
 
