@@ -1,5 +1,9 @@
 # PsychoAI RAG Assistant
 
+<p align="center">
+  <img src="resources/Gemini_Generated_Image_t4lv6ct4lv6ct4lv.png" width="120" alt="PsychoAI logo" />
+</p>
+
 > Production RAG assistant for gestalt therapy supervision.  
 > Answers therapist questions using a curated knowledge base of gestalt therapy literature.
 
@@ -129,6 +133,10 @@ docker compose exec app python main.py eval
 ---
 
 ## Background
+
+<p align="center">
+  <img src="resources/Screenshot 2026-03-26 at 20.28.06.png" width="480" alt="PsychoAI" />
+</p>
 
 Built as part of the PsychoAI platform — an AI assistant for gestalt therapists.  
 The knowledge base contains session guides, supervision frameworks, and core gestalt therapy texts.
